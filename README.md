@@ -70,11 +70,3 @@ The API is simple to use, so no additional documentation is provided. Refer to t
 ### Helper Functions
 
 - `vrmhelper_parse_sites($data)`: Parses API response data into an associative array of site information.
-
-## License
-
-Include any license information here if applicable.
-
----
-
-For any issues or contributions, feel free to open a pull request or issue in this repository.
