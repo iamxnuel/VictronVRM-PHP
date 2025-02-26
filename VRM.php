@@ -1,5 +1,33 @@
 <?php
 
+    function vrm_cache($idUser, $maxAge=30)
+    {
+        global $vrmCache;
+
+        if($vrmCache)
+            if(key_exists($idUser, $vrmCache))
+            {
+                $cacheItem = $vrmCache[$idUser];
+
+                $cacheAge = (time() - $cacheItem["time"]) / 60;
+
+                if($cacheAge < $maxAge)
+                    return $cacheItem["data"];
+            }
+
+        return false;
+    }
+
+    function vrm_set_cache($idUser, $data)
+    {
+        global $vrmCache;
+
+        $vrmCache[$idUser] = array(
+            "time" => time(),
+            "data" => $data
+        );
+    }
+
     function vrm_login_get_token($username, $password)
     {
         $vrm_request = curl_init();
@@ -56,7 +84,21 @@
 
     function vrm_readfull($idUser, $token, $isBearerToken=true)
     {
-        return vrm_request("users/$idUser/installations?extended=1", $token, null, $isBearerToken);
+        if($cache = vrm_cache($idUser))
+            return $cache;
+
+        $data = vrm_request("users/$idUser/installations?extended=1", $token, null, $isBearerToken);
+
+        vrm_set_cache($idUser, $data);
+
+        return $data;
+    }
+
+    function vrm_system_overview($idSite, $token, $isBearerToken=true)
+    {
+        $data = vrm_request("installations/$idSite/widgets/TempSummaryAndGraph", $token, null, $isBearerToken);
+
+        return $data;
     }
 
     function vrm_get_site($idSite, $idUser, $token, $isBearerToken=true, $fullData=null)
@@ -73,6 +115,14 @@
             return $sites[$idSite];
 
         return false;
+    }
+
+    function vrm_get_site_alarms(array $site)
+    {
+        if(!$site)
+            return false;
+
+        return $site["current_alarms"];
     }
 
     function vrm_get_site_timestamp(array $site)
@@ -143,6 +193,46 @@
     function vrm_get_site_solaryield(array $site)
     {
         return vrm_get_site_attribute($site, "solar_yield");
+    }
+
+    function vrm_get_site_batterysoc(array $site)
+    {
+        return vrm_get_site_attribute($site, "bs");
+    }
+
+    function vrm_get_site_current(array $site)
+    {
+        return vrm_get_site_attribute($site, "bc");
+    }
+
+    function vrm_get_site_acinput(array $site)
+    {
+        return vrm_get_site_attribute($site, "si1");
+    }
+
+    function vrm_get_site_systemstate(array $site)
+    {
+        return vrm_get_site_attribute($site, "ss");
+    }
+
+    function vrm_get_site_gridpower(array $site)
+    {
+        return vrm_get_site_attribute($site, "from_to_grid");
+    }
+
+    function vrm_get_site_switchposition(array $site)
+    {
+        return vrm_get_site_attribute($site, "s");
+    }
+
+    function vrm_get_site_lowstateofcharge(array $site)
+    {
+        return vrm_get_site_attribute($site, "ASoc");
+    }
+
+    function vrm_get_site_gridalarm(array $site)
+    {
+        return vrm_get_site_attribute($site, "Agl");
     }
 
     function vrmhelper_parse_sites($data)
